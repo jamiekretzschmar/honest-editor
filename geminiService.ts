@@ -2,16 +2,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PlatformMode, RequestProfile, GeneratorResult, PlaylistItem, SortOrder, ManualItem, GroundingSource } from "./types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
 export const generatePlaylist = async (
   prompt: string, 
   advancedConfig: Partial<RequestProfile>
 ): Promise<GeneratorResult> => {
+  // Instantiate client right before use to ensure latest API key is used
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview", // Upgraded for professional-grade complex curation tasks
+    model: "gemini-3-pro-preview",
     contents: `
-      Act as "The Honest Curator", a world-class editor with obsessive attention to detail and zero tolerance for broken links.
+      Act as "The Honest Curator", a world-class editor with obsessive attention to detail.
       Analyze the following user request and generate a structured playlist/collection response.
       
       User Request: "${prompt}"
@@ -28,13 +29,10 @@ export const generatePlaylist = async (
       
       Editorial Guidelines:
       1. PLATFORM: Music (Spotify) or Videos (YouTube).
-      2. SCORING: Use high editorial standards (0-100). If YouTube, prioritize official channel authority.
-      3. HEURISTICS: List 1-3 short tags explaining the selection.
+      2. SCORING: Use high editorial standards (0-100).
+      3. IDS: Provide a valid "platformId".
       4. COMMENTARY: Provide a sharp, professional editorial take.
-      5. IDS: Provide a valid "platformId". For YouTube, this is exactly 11 characters. 
-      6. DESCRIPTION: Write a one-sentence high-fidelity review for each item.
-      7. DATE: Include the release year if possible.
-
+      
       Return the result in valid JSON format.
     `,
     config: {
@@ -81,7 +79,6 @@ export const generatePlaylist = async (
     }
   });
 
-  // Extract Grounding Chunks as required by guidelines
   const sources: GroundingSource[] = [];
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
   if (chunks) {
@@ -100,9 +97,11 @@ export const generatePlaylist = async (
 };
 
 export const analyzeManualPlaylist = async (items: ManualItem[]): Promise<GeneratorResult> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const itemListString = items.map(i => `- ${i.title} by ${i.creator}`).join('\n');
+  
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview", // Upgraded for complex analysis
+    model: "gemini-3-pro-preview",
     contents: `
       Act as "The Honest Curator". Review this manual collection:
       ${itemListString}

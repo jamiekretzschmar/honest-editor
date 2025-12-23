@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     <script>
-        // Pre-flight theme synchronization to prevent FOUC (Flash of Unstyled Content)
+        // Pre-flight theme synchronization
         (function() {
             const savedTheme = localStorage.getItem('hc_theme') || 'dark';
             if (savedTheme === 'light') {
@@ -42,11 +42,6 @@
             transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .light-theme body {
-            background-color: #fafafa;
-            color: #121212;
-        }
-
         .serif {
             font-family: 'Playfair Display', serif;
         }
@@ -57,18 +52,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        .gradient-text {
-            background: linear-gradient(135deg, var(--text-color) 0%, #a1a1a1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) skewX(12deg); }
-            100% { transform: translateX(150%) skewX(12deg); }
-        }
-
-        /* Custom scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
         }
@@ -93,5 +76,7 @@
 </head>
 <body>
     <div id="root"></div>
+    <!-- Explicit module entry point to prevent loading failures -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
