@@ -11,6 +11,7 @@ import SettingsModal from './components/SettingsModal';
 import LibraryView from './components/LibraryView';
 
 const App: React.FC = () => {
+  const [hasStarted, setHasStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +54,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Apply theme class to documentElement for global CSS variable control
     if (theme === 'light') {
       document.documentElement.classList.add('light-theme');
     } else {
@@ -68,14 +68,25 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-  const saveToLocalStorage = (newLibrary: SavedPlaylist[]) => {
-    localStorage.setItem('hc_library', JSON.stringify(newLibrary));
-    setLibrary(newLibrary);
-  };
-
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const initializeApp = async () => {
+    // Compliance Check for High-Fidelity Gemini Models
+    try {
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          await window.aistudio.openSelectKey();
+          // Proceeding after triggering dialog as per race condition guidelines
+        }
+      }
+    } catch (e) {
+      console.warn("API Key Selection Context not available, proceeding with env key.");
+    }
+    setHasStarted(true);
   };
 
   const handleSearch = useCallback(async (query: string, config: Partial<RequestProfile>) => {
@@ -114,31 +125,27 @@ const App: React.FC = () => {
 
   const handleSavePlaylist = () => {
     if (!result) return;
-    
     const defaultName = result.profile.keywords || "New Collection";
     const name = window.prompt("Enter a name for this collection:", defaultName);
-    
-    // Graceful cancellation handling
     if (name === null) return;
-    
     const finalName = name.trim() || defaultName;
-
     const newEntry: SavedPlaylist = {
       id: Math.random().toString(36).substr(2, 9),
       name: finalName,
       date: new Date().toLocaleDateString(),
       data: result
     };
-    
     const updated = [newEntry, ...library];
-    saveToLocalStorage(updated);
-    showToast(`Playlist "${finalName}" archived in local storage.`);
+    localStorage.setItem('hc_library', JSON.stringify(updated));
+    setLibrary(updated);
+    showToast(`Playlist "${finalName}" archived.`);
   };
 
   const deleteFromLibrary = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = library.filter(p => p.id !== id);
-    saveToLocalStorage(updated);
+    localStorage.setItem('hc_library', JSON.stringify(updated));
+    setLibrary(updated);
   };
 
   const loadFromLibrary = (saved: SavedPlaylist) => {
@@ -181,6 +188,53 @@ const App: React.FC = () => {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${spotifyClientId}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     window.location.href = authUrl;
   };
+
+  if (!hasStarted) {
+    return (
+      <div className="fixed inset-0 z-[500] bg-black text-white flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.15)_0%,transparent_70%)]"></div>
+        </div>
+        
+        <div className="relative z-10 animate-in fade-in zoom-in-95 duration-1000 flex flex-col items-center">
+          <div className="mb-12 w-32 h-32 md:w-48 md:h-48 rounded-[3rem] bg-gradient-to-br from-cyan-400 to-blue-600 p-1.5 shadow-[0_0_80px_rgba(6,182,212,0.4)]">
+             <img src="https://image.pollinations.ai/prompt/a%20sleek%20modern%20circular%20logo%20dark%20blue%20background%20magnifying%20glass%20over%20a%20globe%20revealing%20connected%20musical%20notes%20and%20nodes%20clean%20white%20lines%20minimalist%20luxury%20design?width=400&height=400&nologo=true" alt="The Honest Curator Seal" className="w-full h-full object-cover rounded-[2.8rem]" />
+          </div>
+
+          <h1 className="serif text-5xl md:text-8xl font-bold mb-6 tracking-tighter">
+            The <span className="italic font-normal opacity-80">Honest</span> Curator
+          </h1>
+          
+          <div className="w-24 h-px bg-cyan-500 mb-8 opacity-50"></div>
+          
+          <p className="max-w-xl mx-auto text-zinc-400 text-lg md:text-2xl font-light leading-relaxed italic mb-12 px-4">
+            "Professional-grade curation for the discerning listener."
+          </p>
+
+          <button 
+            onClick={initializeApp}
+            className="group relative px-12 py-5 bg-white text-black font-black uppercase tracking-[0.4em] text-xs md:text-sm rounded-2xl hover:bg-cyan-500 hover:text-white transition-all duration-500 shadow-[0_20px_40px_rgba(255,255,255,0.1)] active:scale-95 overflow-hidden"
+          >
+            <span className="relative z-10">Initialize Engine</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          </button>
+
+          <div className="mt-16 flex flex-col items-center gap-4">
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] max-w-xs leading-relaxed">
+              Powered by Gemini 3 Pro Reasoning. Paid API Key selection may be required for high-fidelity synthesis.
+            </p>
+            <a 
+              href="https://ai.google.dev/gemini-api/docs/billing" 
+              target="_blank" 
+              className="text-[9px] text-cyan-500/60 hover:text-cyan-500 font-black uppercase tracking-widest border-b border-cyan-500/20 transition-all"
+            >
+              Billing Documentation
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white pb-24 transition-colors duration-500`}>
