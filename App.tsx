@@ -74,6 +74,7 @@ const App: React.FC = () => {
   };
 
   const initializeApp = async () => {
+    // Protocol: High-fidelity reasoning requires a paid project key context
     try {
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
@@ -82,7 +83,7 @@ const App: React.FC = () => {
         }
       }
     } catch (e) {
-      console.warn("API Key Selection Context not available.");
+      console.warn("API Key Selection UI not available, falling back to background credentials.");
     }
     setHasStarted(true);
   };
@@ -91,20 +92,18 @@ const App: React.FC = () => {
     console.error("API Error encountered:", err);
     const errorMessage = err?.message || String(err);
     
-    // Protocol: Handle "Requested entity was not found" or auth errors by prompting for key again
     if (errorMessage.includes("Requested entity was not found") || 
         errorMessage.includes("API_KEY_INVALID") || 
         errorMessage.includes("401") || 
         errorMessage.includes("403")) {
-      setError("Credentials verification failed. Please select a valid paid API key for high-fidelity reasoning.");
+      setError("Credentials verification failed. Access to the Bureau of Standards requires a valid paid API key.");
       if (window.aistudio) {
         setTimeout(async () => {
           await window.aistudio.openSelectKey();
-          setHasStarted(true); // Proceed after re-prompt
         }, 2000);
       }
     } else {
-      setError("The curation engines are currently overwhelmed. Ensure your API key has Google Search enabled.");
+      setError("The curation engines are currently overwhelmed. Please ensure Search Grounding is enabled in your project.");
     }
   }, []);
 
@@ -209,45 +208,55 @@ const App: React.FC = () => {
   if (!hasStarted) {
     return (
       <div className="fixed inset-0 z-[500] bg-black text-white flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
+        {/* Animated Background */}
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.15)_0%,transparent_70%)]"></div>
+           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
         </div>
         
         <div className="relative z-10 animate-in fade-in zoom-in-95 duration-1000 flex flex-col items-center">
-          <div className="mb-12 w-32 h-32 md:w-48 md:h-48 rounded-[3rem] bg-gradient-to-br from-cyan-400 to-blue-600 p-1.5 shadow-[0_0_80px_rgba(6,182,212,0.4)]">
-             <img src="https://image.pollinations.ai/prompt/a%20sleek%20modern%20circular%20logo%20dark%20blue%20background%20magnifying%20glass%20over%20a%20globe%20revealing%20connected%20musical%20notes%20and%20nodes%20clean%20white%20lines%20minimalist%20luxury%20design?width=400&height=400&nologo=true" alt="The Honest Curator Seal" className="w-full h-full object-cover rounded-[2.8rem]" />
+          <div className="mb-12 w-36 h-36 md:w-56 md:h-56 rounded-[3.5rem] bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-900 p-1.5 shadow-[0_0_100px_rgba(6,182,212,0.3)] group hover:scale-105 transition-transform duration-700">
+             <img src="https://image.pollinations.ai/prompt/a%20sleek%20modern%20circular%20logo%20dark%20blue%20background%20magnifying%20glass%20over%20a%20globe%20revealing%20connected%20musical%20notes%20and%20nodes%20clean%20white%20lines%20minimalist%20luxury%20design?width=512&height=512&nologo=true" alt="Bureau Seal" className="w-full h-full object-cover rounded-[3.3rem] grayscale-[0.3] group-hover:grayscale-0 transition-all" />
           </div>
 
-          <h1 className="serif text-5xl md:text-8xl font-bold mb-6 tracking-tighter">
+          <h1 className="serif text-6xl md:text-9xl font-bold mb-8 tracking-tighter leading-none">
             The <span className="italic font-normal opacity-80">Honest</span> Curator
           </h1>
           
-          <div className="w-24 h-px bg-cyan-500 mb-8 opacity-50"></div>
+          <div className="w-32 h-px bg-cyan-500 mb-10 opacity-50 shadow-[0_0_10px_rgba(6,182,212,1)]"></div>
           
-          <p className="max-w-xl mx-auto text-zinc-400 text-lg md:text-2xl font-light leading-relaxed italic mb-12 px-4">
-            "Professional-grade curation for the discerning listener."
+          <p className="max-w-2xl mx-auto text-zinc-400 text-xl md:text-3xl font-light leading-relaxed italic mb-16 px-4">
+            "Taste is not a democracy. It is a standard."
           </p>
 
-          <button 
-            onClick={initializeApp}
-            className="group relative px-12 py-5 bg-white text-black font-black uppercase tracking-[0.4em] text-xs md:text-sm rounded-2xl hover:bg-cyan-500 hover:text-white transition-all duration-500 shadow-[0_20px_40px_rgba(255,255,255,0.1)] active:scale-95 overflow-hidden"
-          >
-            <span className="relative z-10">Initialize Engine</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          </button>
-
-          <div className="mt-16 flex flex-col items-center gap-4">
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] max-w-xs leading-relaxed">
-              Powered by Gemini 3 Pro. A paid API key with Google Search access is required for operation.
-            </p>
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
-              className="text-[9px] text-cyan-500/60 hover:text-cyan-500 font-black uppercase tracking-widest border-b border-cyan-500/20 transition-all"
+          <div className="flex flex-col items-center gap-8">
+            <button 
+              onClick={initializeApp}
+              className="group relative px-16 py-6 bg-white text-black font-black uppercase tracking-[0.4em] text-xs md:text-sm rounded-2xl hover:bg-cyan-500 hover:text-white transition-all duration-500 shadow-[0_25px_50px_rgba(0,0,0,0.5)] active:scale-95 overflow-hidden"
             >
-              Billing Documentation
-            </a>
+              <span className="relative z-10">Initialize Bureau Entry</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            </button>
+
+            <div className="flex flex-col items-center gap-4 text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] max-w-sm">
+              <p className="text-center leading-relaxed opacity-60">
+                Powered by Gemini 3 Pro Reasoning Engine.<br/>
+                Verification of API Credentials required for entry.
+              </p>
+              <a 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
+                target="_blank" 
+                className="text-cyan-500/80 hover:text-cyan-400 border-b border-cyan-500/20 transition-all pb-1"
+              >
+                Billing Documentation
+              </a>
+            </div>
           </div>
+        </div>
+        
+        {/* Version Tag */}
+        <div className="absolute bottom-12 left-12 text-[10px] font-black uppercase tracking-[0.4em] opacity-30 text-zinc-500">
+          Bureau of Standards // v2.5.0
         </div>
       </div>
     );
