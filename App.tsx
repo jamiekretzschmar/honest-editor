@@ -74,20 +74,39 @@ const App: React.FC = () => {
   };
 
   const initializeApp = async () => {
-    // Compliance Check for High-Fidelity Gemini Models
     try {
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         if (!hasKey) {
           await window.aistudio.openSelectKey();
-          // Proceeding after triggering dialog as per race condition guidelines
         }
       }
     } catch (e) {
-      console.warn("API Key Selection Context not available, proceeding with env key.");
+      console.warn("API Key Selection Context not available.");
     }
     setHasStarted(true);
   };
+
+  const handleApiError = useCallback(async (err: any) => {
+    console.error("API Error encountered:", err);
+    const errorMessage = err?.message || String(err);
+    
+    // Protocol: Handle "Requested entity was not found" or auth errors by prompting for key again
+    if (errorMessage.includes("Requested entity was not found") || 
+        errorMessage.includes("API_KEY_INVALID") || 
+        errorMessage.includes("401") || 
+        errorMessage.includes("403")) {
+      setError("Credentials verification failed. Please select a valid paid API key for high-fidelity reasoning.");
+      if (window.aistudio) {
+        setTimeout(async () => {
+          await window.aistudio.openSelectKey();
+          setHasStarted(true); // Proceed after re-prompt
+        }, 2000);
+      }
+    } else {
+      setError("The curation engines are currently overwhelmed. Ensure your API key has Google Search enabled.");
+    }
+  }, []);
 
   const handleSearch = useCallback(async (query: string, config: Partial<RequestProfile>) => {
     setLoading(true);
@@ -99,12 +118,11 @@ const App: React.FC = () => {
       const data = await generatePlaylist(query, config);
       setResult(data);
     } catch (err: any) {
-      console.error(err);
-      setError("The curation engines are currently overwhelmed. Please try a different vibe.");
+      await handleApiError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleApiError]);
 
   const handleManualAnalyze = useCallback(async (items: ManualItem[]) => {
     setLoading(true);
@@ -116,12 +134,11 @@ const App: React.FC = () => {
       const data = await analyzeManualPlaylist(items);
       setResult(data);
     } catch (err: any) {
-      console.error(err);
-      setError("The editor is currently unavailable to review your manual collection.");
+      await handleApiError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleApiError]);
 
   const handleSavePlaylist = () => {
     if (!result) return;
@@ -221,7 +238,7 @@ const App: React.FC = () => {
 
           <div className="mt-16 flex flex-col items-center gap-4">
             <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] max-w-xs leading-relaxed">
-              Powered by Gemini 3 Pro Reasoning. Paid API Key selection may be required for high-fidelity synthesis.
+              Powered by Gemini 3 Pro. A paid API key with Google Search access is required for operation.
             </p>
             <a 
               href="https://ai.google.dev/gemini-api/docs/billing" 
@@ -315,7 +332,8 @@ const App: React.FC = () => {
         {error && (
           <div className="mb-8 p-6 bg-red-500/10 border border-red-500/20 rounded-3xl text-red-500 text-center animate-in fade-in">
              <i className="fa-solid fa-circle-exclamation mb-2 text-2xl block"></i>
-             {error}
+             <p className="font-bold">{error}</p>
+             <button onClick={() => setError(null)} className="mt-4 text-[10px] uppercase font-black tracking-widest border-b border-red-500/30">Dismiss</button>
           </div>
         )}
 
@@ -444,7 +462,7 @@ const App: React.FC = () => {
 
           <div className="flex-1 max-w-lg space-y-4">
             <p className="text-[10px] text-zinc-500 font-medium leading-relaxed">
-              <strong>AI Disclosure:</strong> All editorial commentary and vibe-alignment scores are synthesized by the Gemini 3 Pro reasoning model. While we strive for peak fidelity, curators are encouraged to verify asset metadata independently.
+              <strong>AI Disclosure:</strong> All editorial commentary and vibe-alignment scores are synthesized by Gemini 3 Pro. While we strive for peak fidelity, curators are encouraged to verify asset metadata independently.
             </p>
             <div className="flex flex-wrap gap-6 text-[9px] text-zinc-500 font-black uppercase tracking-widest">
               <a href="#" className="hover:text-cyan-500 transition-colors">Terms of Service</a>
