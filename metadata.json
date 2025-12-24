@@ -1,8 +1,5 @@
 {
   "name": "The Honest Curator",
   "description": "A world-class universal playlist and video collection generator that applies strict editorial standards to your requests, powered by Gemini.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }
